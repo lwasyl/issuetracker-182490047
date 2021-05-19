@@ -1,0 +1,38 @@
+name: Build project
+
+on:
+  push:
+
+jobs:
+  cancel-previous-workflows:
+    name: Cancel previous workflow runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9.0
+        with:
+          access_token: ${{ github.token }}
+
+  ui-tests:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        apiVersion: [ 23, 24, 28 ]
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Cache .gradle
+        uses: burrunan/gradle-cache-action@v1
+        with:
+          job-id: ui-tests
+          gradle-distribution-sha-256-sum-warning: false
+
+      - name: run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.apiVersion }}
+          profile: pixel_xl
+          script: ./gradlew app:cDAT
